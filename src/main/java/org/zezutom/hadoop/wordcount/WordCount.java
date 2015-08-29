@@ -1,33 +1,24 @@
 package org.zezutom.hadoop.wordcount;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reducer;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -36,41 +27,6 @@ public class WordCount extends Configured implements Tool {
 
 	private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(WordCount.class);
 	
-	// MAPPER CLASS
-	static class MapperImpl extends MapReduceBase implements Mapper<LongWritable, Text, Text, IntWritable> {
-
-		private final static IntWritable one = new IntWritable(1);
-
-		private Text word = new Text();
-
-		@Override
-		public void map(LongWritable key, Text value, OutputCollector<Text, IntWritable> output, Reporter reporter)
-				throws IOException {
-			String line = value.toString();
-			StringTokenizer it = new StringTokenizer(line);
-			
-			while (it.hasMoreTokens()) {
-				word.set(it.nextToken());
-				output.collect(word, one);
-			}
-		}
-
-	}
-
-	// REDUCER CLASS
-	static class ReducerImpl extends MapReduceBase implements Reducer<Text, IntWritable, Text, IntWritable> {
-
-		@Override
-		public void reduce(Text key, Iterator<IntWritable> values, OutputCollector<Text, IntWritable> output,
-				Reporter reporter) throws IOException {
-			int sum = 0;
-			while (values.hasNext()) {
-				sum += values.next().get();
-			}
-			output.collect(key, new IntWritable(sum));
-		}
-	}
-
 	static int printUsage(String error) {
 		LOGGER.error(error);
 		LOGGER.info("wordcount [-m #mappers ] [-r #reducers] input_file output_file");
@@ -94,9 +50,9 @@ public class WordCount extends Configured implements Tool {
 		conf.setOutputValueClass(IntWritable.class);
 
 		// Map -> (Sort -> Shuffle) -> Reduce
-		conf.setMapperClass(MapperImpl.class);
-		conf.setCombinerClass(ReducerImpl.class);
-		conf.setReducerClass(ReducerImpl.class);
+		conf.setMapperClass(WordCountMapper.class);
+		conf.setCombinerClass(WordCountReducer.class);
+		conf.setReducerClass(WordCountReducer.class);
 
 		List<String> otherArgs = new ArrayList<>();
 		Iterator<String> it = Arrays.asList(args).iterator();
@@ -172,7 +128,5 @@ public class WordCount extends Configured implements Tool {
 	public static void main(String[] args) throws Exception {	
 		WordCountRunner.init(args);
 		SpringApplication.run(WordCountRunner.class, args);
-		//int status = ToolRunner.run(new Configuration(), new WordCount(), args);
-		//System.exit(status);
 	}
 }
