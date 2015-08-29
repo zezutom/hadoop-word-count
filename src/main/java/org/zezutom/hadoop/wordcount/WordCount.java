@@ -159,8 +159,8 @@ public class WordCount extends Configured implements Tool {
 		
 		public WordCountRunner() throws Exception {
 			Configuration conf = new Configuration();
-			conf.addResource(new Path("/usr/local/Cellar/hadoop/2.7.1/libexec/etc/hadoop/core-site.xml"));
-			conf.addResource(new Path("/usr/local/Cellar/hadoop/2.7.1/libexec/etc/hadoop/hdfs-site.xml"));
+			conf.addResource(new Path(conf("core-site.xml")));
+			conf.addResource(new Path(conf("hdfs-site.xml")));
 			
 			ToolRunner.run(conf, new WordCount(), args);
 		}
